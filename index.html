@@ -1,0 +1,1634 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Islas de Luz - Secuencias Ancestrales (SUPER BLOOM Edition)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #f4eff4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #4a3e4d;
+        }
+        #game-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.05s ease;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* INTERFAZ SUPERIOR */
+        .ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 25px;
+        }
+        .ui-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            width: 100%;
+        }
+        .ui-visible {
+            opacity: 1;
+        }
+        .stats-box {
+            background: rgba(255, 255, 255, 0.85);
+            padding: 10px 22px;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.15);
+            font-weight: 800;
+            color: #6c5ce7;
+            border-left: 4px solid #b5e2fa;
+            border-right: 1px solid rgba(181, 226, 250, 0.5);
+            letter-spacing: 2px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(8px);
+        }
+        .crystal-box {
+            border-left: 4px solid #ffb7b2;
+            color: #ff6b6b;
+        }
+        .puzzle-progress-box {
+            border-left: 4px solid #bffcc6;
+            color: #2e7d32;
+        }
+
+        /* PANTALLAS Y OVERLAYS */
+        .screen-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #fff0f5 0%, #e6e6fa 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.5s ease;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .hidden {
+            display: none !important;
+            opacity: 0;
+        }
+        h1 {
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            margin-bottom: 15px;
+            color: #6c5ce7;
+            text-shadow: 0 4px 10px rgba(108, 92, 231, 0.2), 0 0 20px rgba(255, 255, 255, 0.6);
+            letter-spacing: 4px;
+            text-align: center;
+            font-weight: 900;
+        }
+        h2 {
+            font-size: 1.5rem;
+            color: #6c5ce7;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
+        p {
+            margin-bottom: 25px;
+            color: #7f8c8d;
+            max-width: 600px;
+            text-align: center;
+            line-height: 1.7;
+            font-size: clamp(0.9rem, 4vw, 1.1rem);
+            letter-spacing: 0.5px;
+        }
+        .button-group {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        button {
+            background: linear-gradient(135deg, #ffb7b2, #b5e2fa);
+            color: #4a3e4d;
+            border: none;
+            padding: 16px 35px;
+            font-size: 1rem;
+            font-weight: 800;
+            border-radius: 8px;
+            cursor: pointer;
+            pointer-events: auto;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(255, 183, 178, 0.4);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        button:hover {
+            transform: scale(1.04);
+            box-shadow: 0 6px 25px rgba(181, 226, 250, 0.8);
+        }
+        .btn-secondary {
+            background: linear-gradient(135deg, #e6e6fa, #dcdde1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        /* COMPONENTES DE LOGIN / RANKING */
+        .input-pilot {
+            padding: 12px 20px;
+            font-size: 1.1rem;
+            border: 2px solid rgba(108, 92, 231, 0.3);
+            border-radius: 8px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 320px;
+            text-align: center;
+            outline: none;
+            color: #4a3e4d;
+            font-weight: 600;
+            background: rgba(255,255,255,0.8);
+        }
+        .ranking-container {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(108, 92, 231, 0.2);
+            border-radius: 12px;
+            padding: 15px;
+            width: 100%;
+            max-width: 350px;
+            margin-top: 20px;
+            max-height: 180px;
+            overflow-y: auto;
+        }
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        .ranking-item:last-child { border-bottom: none; }
+        .ranking-item.current-user {
+            background: linear-gradient(90deg, rgba(255, 183, 178, 0.3), rgba(181, 226, 250, 0.3));
+            border-radius: 6px;
+        }
+
+        /* RUNAS INTERACTIVAS */
+        #puzzle-html-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 12vh;
+            pointer-events: none;
+            z-index: 5;
+            padding-left: 15px;
+            padding-right: 15px;
+        }
+        .puzzle-instructions {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px 25px;
+            border-radius: 8px;
+            font-size: clamp(0.85rem, 3.5vw, 1.05rem);
+            margin-bottom: 25px;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05), 0 0 1px rgba(108, 92, 231, 0.3);
+            border: 1px solid rgba(108, 92, 231, 0.2);
+            color: #4a3e4d;
+            pointer-events: auto;
+            backdrop-filter: blur(10px);
+        }
+        .puzzle-container { 
+            display: flex; 
+            gap: clamp(10px, 3vw, 25px); 
+            background: rgba(255, 255, 255, 0.7);
+            padding: 20px clamp(15px, 5vw, 40px);
+            border-radius: 12px;
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.08);
+            pointer-events: auto;
+            max-width: 100%;
+            justify-content: center;
+        }
+        .rune-btn {
+            width: clamp(55px, 15vw, 80px);
+            height: clamp(55px, 15vw, 80px);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(20px, 6vw, 28px);
+            font-weight: bold;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            background: rgba(255, 255, 255, 0.8);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            position: relative;
+        }
+        .rune-indicator {
+            font-size: 10px;
+            margin-top: 2px;
+            color: #7f8c8d;
+            font-weight: normal;
+        }
+        .rune-btn:active {
+            transform: scale(0.9);
+            filter: brightness(0.9);
+        }
+        
+        /* Clases base dinámicas de runas */
+        #rune0 { color: #e66b6b; border: 2px solid #ffb7b2; }
+        #rune1 { color: #5b99c2; border: 2px solid #b5e2fa; }
+        #rune2 { color: #5cb367; border: 2px solid #bffcc6; }
+        #rune3 { color: #cc9c3d; border: 2px solid #ffdac1; }
+
+        #rune0.active { color: #fff; background: #ffb7b2; box-shadow: 0 0 25px #ffb7b2; transform: scale(1.1) translateY(-5px); }
+        #rune1.active { color: #fff; background: #b5e2fa; box-shadow: 0 0 25px #b5e2fa; transform: scale(1.1) translateY(-5px); }
+        #rune2.active { color: #fff; background: #bffcc6; box-shadow: 0 0 25px #bffcc6; transform: scale(1.1) translateY(-5px); }
+        #rune3.active { color: #fff; background: #ffdac1; box-shadow: 0 0 25px #ffdac1; transform: scale(1.1) translateY(-5px); }
+        
+        .disabled-clicks {
+            pointer-events: none !important;
+            opacity: 0.6;
+        }
+
+        /* SELECCIÓN DE NIVELES */
+        .level-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            max-width: 650px;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        @media (min-width: 600px) {
+            .level-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        .level-card {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(108, 92, 231, 0.2);
+            border-radius: 10px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            min-height: 105px;
+            text-align: center;
+        }
+        .level-card.locked {
+            background: rgba(220, 221, 225, 0.5);
+            border-color: rgba(0,0,0,0.1);
+            cursor: not-allowed;
+            color: #7f8c8d;
+            justify-content: center;
+        }
+        .level-card:not(.locked):hover {
+            transform: translateY(-4px);
+            border-color: #6c5ce7;
+            box-shadow: 0 8px 20px rgba(108, 92, 231, 0.15);
+        }
+        .level-number {
+            font-weight: 900;
+            font-size: 1.1rem;
+        }
+        .level-name {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #5c4d61;
+            margin: 4px 0;
+            line-height: 1.2;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .level-stars {
+            font-size: 0.75rem;
+            color: #fbc531;
+            letter-spacing: 1px;
+            height: 14px;
+        }
+        .pilot-tag {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #6c5ce7;
+            margin-bottom: 15px;
+            background: rgba(255,255,255,0.6);
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        /* ESTILOS DE ESTRELLAS Y PREMIOS */
+        .stars-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            font-size: 2.5rem;
+        }
+        .star-icon {
+            color: #dcdde1;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .star-icon.earned {
+            color: #fbc531;
+            text-shadow: 0 0 15px rgba(251, 197, 49, 0.6);
+            transform: scale(1.1);
+        }
+        .perfect-badge {
+            background: linear-gradient(45deg, #ff7675, #6c5ce7);
+            color: #fff;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-weight: 900;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+            animation: pulse-animation 1.5s infinite alternate;
+        }
+        .breakdown-list {
+            text-align: left;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.6);
+            padding: 15px 25px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.7);
+            min-width: 280px;
+        }
+        .breakdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        .breakdown-item:last-child {
+            margin-bottom: 0;
+        }
+        .item-star {
+            font-size: 1.2rem;
+        }
+        .item-star.missed { color: #ccc; }
+        .item-star.hit { color: #fbc531; }
+
+        @keyframes pulse-animation {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.06); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div class="ui-layer">
+        <div id="game-ui" class="ui-top">
+            <div class="stats-box" id="level-display">SECTOR 01</div>
+            <div class="stats-box puzzle-progress-box hidden" id="puzzle-progress-display">PUZZLE: 1/3</div>
+            <div class="stats-box crystal-box" id="crystal-display">CRISTALES: 0 / 5</div>
+        </div>
+    </div>
+
+    <div id="puzzle-html-layer" class="hidden">
+        <div class="puzzle-instructions" id="puzzle-text-instructions">
+            Sincroniza la frecuencia elemental.
+        </div>
+        <div class="puzzle-container disabled-clicks" id="puzzle-tiles-container">
+            <div class="rune-btn" id="rune0" onmousedown="handleRuneClick(0)" ontouchstart="handleRuneClick(0)"><span id="g0">ᛗ</span><span class="rune-indicator" id="ind0"></span></div>
+            <div class="rune-btn" id="rune1" onmousedown="handleRuneClick(1)" ontouchstart="handleRuneClick(1)"><span id="g1">ᛖ</span><span class="rune-indicator" id="ind1"></span></div>
+            <div class="rune-btn" id="rune2" onmousedown="handleRuneClick(2)" ontouchstart="handleRuneClick(2)"><span id="g2">ᛗ</span><span class="rune-indicator" id="ind2"></span></div>
+            <div class="rune-btn" id="rune3" onmousedown="handleRuneClick(3)" ontouchstart="handleRuneClick(3)"><span id="g3">ᛟ</span><span class="rune-indicator" id="ind3"></span></div>
+        </div>
+    </div>
+
+    <div id="login-screen" class="screen-overlay">
+        <h1 style="letter-spacing: 6px;">NEXO ANCESTRAL</h1>
+        <p>Introduce tu nombre de piloto místico para sincronizar tu progreso en la red del Nexo.</p>
+        <input type="text" id="pilot-name-input" class="input-pilot" placeholder="Nombre del Piloto" maxlength="15">
+        <div class="button-group">
+            <button onclick="registerPilot()">Ingresar al Nexo</button>
+        </div>
+        <div class="ranking-container" id="login-ranking-box">
+            <h2 style="font-size: 1rem; text-align: center; margin-bottom: 8px;">RANKING DE PILOTOS</h2>
+            <div id="login-ranking-list"></div>
+        </div>
+    </div>
+
+    <div id="start-screen" class="screen-overlay hidden">
+        <h1 style="letter-spacing: 6px;">NEXO ANCESTRAL</h1>
+        <div class="pilot-tag" id="welcome-pilot-tag">Piloto: -</div>
+        <p>Pilota el interceptor místico usando <b>A / D</b> o <b>Flechas</b> en PC, o <b>tocando los lados de la pantalla</b> en móviles. ¡Esquiva peligros, recolecta Cristales de Luz y activa los Faros Ancestrales! <br><br><b>Cuidado:</b> Un solo impacto destruirá tu interceptor.</p>
+        <div class="button-group">
+            <button onclick="showScreen('level-screen')">Seleccionar Sector</button>
+            <button class="btn-secondary" onclick="showScreen('login-screen')">Cambiar Piloto</button>
+        </div>
+    </div>
+
+    <div id="level-screen" class="screen-overlay hidden">
+        <h1 style="font-size: 2.5rem; margin-bottom: 10px;">MAPA DE SECTORES</h1>
+        <div class="pilot-tag" id="menu-pilot-tag">Piloto: - | Estrellas: 0</div>
+        <div class="level-grid" id="level-grid-container"></div>
+        <div class="button-group">
+            <button class="btn-secondary" onclick="showScreen('start-screen')">Volver al Inicio</button>
+        </div>
+    </div>
+
+    <div id="gameover-screen" class="screen-overlay hidden">
+        <h1 style="color: #e66b6b; text-shadow: 0 0 20px rgba(230,107,107,0.3);">CONEXIÓN PERDIDA</h1>
+        <p id="gameover-desc">Tu nave se ha desintegrado.</p>
+        <div class="button-group">
+            <button onclick="retryCurrentLevel()" style="background: linear-gradient(135deg, #ffb7b2, #ffcad4); box-shadow: 0 0 20px rgba(255,183,178,0.4);">Recomponer Estructura</button>
+            <button class="btn-secondary" onclick="showScreen('level-screen')">Mapa de Sectores</button>
+        </div>
+    </div>
+
+    <div id="transition-screen" class="screen-overlay hidden" style="background: radial-gradient(circle, #f3e8ff 0%, #e0e7ff 100%);">
+        <h1 id="trans-title" style="color: #6c5ce7; text-shadow: 0 0 25px rgba(108,92,231,0.3);">PUERTO ALCANZADO</h1>
+        <p id="transition-desc">Alineando coordenadas de anclaje... Prepárate para decodificar la melodía del nexo elemental de este sector.</p>
+    </div>
+
+    <div id="victory-screen" class="screen-overlay hidden" style="background: radial-gradient(circle, #e8f5e9 0%, #c8e6c9 100%);">
+        <h1 id="victory-title" style="color: #2e7d32; text-shadow: 0 0 25px rgba(46,125,50,0.2);">NEXO RECONECTADO</h1>
+        
+        <div class="stars-container">
+            <span class="star-icon" id="star1">⭐</span>
+            <span class="star-icon" id="star2">⭐</span>
+            <span class="star-icon" id="star3">⭐</span>
+        </div>
+
+        <div class="perfect-badge hidden" id="perfect-run-badge">¡PERFECT RUN!</div>
+
+        <div class="breakdown-list">
+            <div class="breakdown-item"><span id="b-star1" class="item-star">●</span> FASE 1 COMPLETADA</div>
+            <div class="breakdown-item"><span id="b-star2" class="item-star">●</span> CRISTALES PERFECTOS</div>
+            <div class="breakdown-item"><span id="b-star3" class="item-star">●</span> FRECUENCIA ALINEADA</div>
+        </div>
+
+        <p id="victory-desc">La sobrecarga de energía dulce ha purificado el mar místico.</p>
+        <div class="button-group">
+            <button id="victory-btn" onclick="advanceNext()">Siguiente Coordenada</button>
+            <button class="btn-secondary" onclick="showScreen('level-screen')">Mapa de Sectores</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('game-container');
+
+    const STATES = { START: 0, PHASE1: 1, TRANSITION: 2, PHASE2: 3, VICTORY: 4, GAMEOVER: 5, MAP: 6, LOGIN: 7 };
+    let gameState = STATES.LOGIN;
+    let currentLevel = 1;
+    const MAX_TOTAL_LEVELS = 12;
+
+    const PUZZLE_TYPES = { MEMORY: 'memory', REFLEX: 'reflex', LIGHTSOUT: 'lightsout' };
+
+    // BASE DE DATOS DE IDENTIDADES DE LAS ISLAS
+    const ISLAND_THEMES = {
+        1: { name: "Arrecife de las Margaritas", grass: "#e2f0d9", sky: ["#bce6ff", "#fffde6"], flora: ["#ffffff", "#ffeb3b", "#ffffff", "#fff59d"] },
+        2: { name: "Altar de la Luna Verde", grass: "#cbedd3", sky: ["#a1ebd2", "#e8fff5"], flora: ["#a5d6a7", "#81c784", "#e8f5e9", "#66bb6a"] },
+        3: { name: "Atolón del Sol Naciente", grass: "#fce4ec", sky: ["#ffe0b2", "#f8bbd0"], flora: ["#ff8a80", "#ff80ab", "#ffb74d", "#f48fb1"] },
+        4: { name: "Selva de las Enredaderas Luminosas", grass: "#a7e3bc", sky: ["#c8e6c9", "#e0f2f1"], flora: ["#00e676", "#1de9b6", "#a7ffeb", "#69f0ae"] },
+        5: { name: "Páramo de la Bruma Amatista", grass: "#ebd6fa", sky: ["#e1bee7", "#f3e5f5"], flora: ["#e040fb", "#b57cff", "#ea80fc", "#d1c4e9"] },
+        6: { name: "Oasis Dorados del Alba", grass: "#fef1d2", sky: ["#ffecb3", "#fff8e1"], flora: ["#ffd700", "#ffb300", "#ffe082", "#ffca28"] },
+        7: { name: "Cascadas Celestes de Cristal", grass: "#d2f1f7", sky: ["#b3e5fc", "#e1f5fe"], flora: ["#4fc3f7", "#80deea", "#00b0ff", "#e0f7fa"] },
+        8: { name: "Valle de las Sombras Rosadas", grass: "#fbcce6", sky: ["#f8bbd0", "#fff0f5"], flora: ["#ff69b4", "#ff1493", "#f8bbd0", "#ffc0cb"] },
+        9: { name: "Bosque Abisal de Neón", grass: "#b3f0ff", sky: ["#006064", "#e0f7fa"], flora: ["#00e5ff", "#39ff14", "#ff007f", "#ccff00"] },
+        10:{ name: "Cumbre de los Vientos Plateados", grass: "#e2e7ec", sky: ["#cfd8dc", "#eceff1"], flora: ["#ffffff", "#b0bec5", "#cfd8dc", "#90a4ae"] },
+        11:{ name: "Bahía del Coral de Fuego", grass: "#ffcbd1", sky: ["#ffab91", "#fbe9e7"], flora: ["#ff3d00", "#ff6d00", "#ff5252", "#ff8a80"] },
+        12:{ name: "Templo del Florecimiento Eterno", grass: "#f3e5f5", sky: ["#e8eaf6", "#fce4ec"], flora: ["#d500f9", "#ff4081", "#00e5ff", "#ffff00"] }
+    };
+
+    let keys = {};
+    let touchControls = { left: false, right: false }; 
+    let worldY = 0;
+    const levelLength = 2800; 
+
+    let boat = { x: 0, y: 0, width: 32, height: 60, speed: 480, pulse: 0 };
+    let obstacles = [];
+    let items = []; 
+    let totalCrystalsSpawned = 5;
+    let crystalsCollected = 0;
+
+    let backgroundWaves = [];
+    let magicParticles = [];
+    let boatTrailParticles = [];
+    let islandHealedProgress = 0;
+    let lighthouseLit = false;
+    let bloomTriggered = false; 
+
+    let islandFlora = [];
+    let shakeTimer = 0;
+    let shakeIntensity = 0;
+
+    let audioCtx = null;
+    const runeFrequencies = [293.66, 329.63, 349.23, 440.00];
+
+    let currentPuzzleIndex = 1; 
+    const totalPuzzlesNeeded = 3; 
+    let isShowingSequence = false;
+
+    let memorySequence = [];
+    let playerSequence = [];
+
+    let reflexTimer = 0;
+    let reflexActiveRune = -1;
+    let reflexHits = 0;
+    const reflexTargetHits = 5;
+
+    let loStates = [false, false, false, false]; 
+
+    // SISTEMA MULTIPERFIL Y GLOBAL DE JUGADORES
+    let currentPilot = "";
+    let globalRankings = {}; // { "Nombre": { 1: {unlocked:true, stars:0}, 2:... } }
+
+    loadGlobalRankings();
+    renderRankingList();
+
+    function loadGlobalRankings() {
+        let saved = localStorage.getItem('islasLuzGlobalRankings');
+        if (saved) {
+            try { globalRankings = JSON.parse(saved); } catch(e) { globalRankings = {}; }
+        }
+    }
+
+    function saveGlobalRankings() {
+        localStorage.setItem('islasLuzGlobalRankings', JSON.stringify(globalRankings));
+    }
+
+    function registerPilot() {
+        let input = document.getElementById('pilot-name-input').value.trim();
+        if(!input) return;
+        currentPilot = input;
+
+        // Inicializar perfil si es nuevo de forma estrictamente limpia
+        if (!globalRankings[currentPilot]) {
+            globalRankings[currentPilot] = {};
+            for(let i = 1; i <= MAX_TOTAL_LEVELS; i++) {
+                globalRankings[currentPilot][i] = { unlocked: (i === 1), stars: 0 };
+            }
+            saveGlobalRankings();
+        }
+        
+        document.getElementById('welcome-pilot-tag').innerText = `Piloto: ${currentPilot}`;
+        showScreen('start-screen');
+        renderRankingList();
+    }
+
+    function calculateTotalStars(pilotName) {
+        if (!globalRankings[pilotName]) return 0;
+        let total = 0;
+        for(let i = 1; i <= MAX_TOTAL_LEVELS; i++) {
+            if(globalRankings[pilotName][i]) {
+                total += globalRankings[pilotName][i].stars || 0;
+            }
+        }
+        return total;
+    }
+
+    function renderRankingList() {
+        let sortedPilots = Object.keys(globalRankings).map(name => {
+            return { name: name, stars: calculateTotalStars(name) };
+        }).sort((a,b) => b.stars - a.stars);
+
+        let html = sortedPilots.map(p => `
+            <div class="ranking-item ${p.name === currentPilot ? 'current-user' : ''}">
+                <span>${p.name}</span>
+                <span>⭐ ${p.stars}</span>
+            </div>
+        `).join('');
+
+        document.getElementById('login-ranking-list').innerHTML = html || `<div style="text-align:center;font-size:0.85rem;color:#7f8c8d;padding:10px;">No hay pilotos registrados</div>`;
+    }
+
+    function buildLevelMenu() {
+        const containerGrid = document.getElementById('level-grid-container');
+        containerGrid.innerHTML = '';
+        
+        let pilotData = globalRankings[currentPilot] || {};
+        let totalStars = calculateTotalStars(currentPilot);
+        document.getElementById('menu-pilot-tag').innerText = `Piloto: ${currentPilot} | Estrellas: ${totalStars}`;
+
+        for (let i = 1; i <= MAX_TOTAL_LEVELS; i++) {
+            let data = pilotData[i] || { unlocked: false, stars: 0 };
+            let card = document.createElement('div');
+            let theme = ISLAND_THEMES[i];
+            card.className = `level-card ${data.unlocked ? '' : 'locked'}`;
+            
+            if (data.unlocked) {
+                let starsStr = '';
+                for(let s=0; s<3; s++) starsStr += (s < data.stars) ? '⭐' : '☆';
+                card.innerHTML = `
+                    <div class="level-number">Sector ${i}</div>
+                    <div class="level-name">${theme.name}</div>
+                    <div class="level-stars">${starsStr}</div>
+                `;
+                card.onclick = () => startLevel(i);
+            } else {
+                card.innerHTML = `<div class="level-number" style="font-size:1.5rem;">🔒</div>`;
+            }
+            containerGrid.appendChild(card);
+        }
+    }
+
+    // MOTOR SEMILLA DETERMINISTA (PRNG Simple)
+    let seed = 1;
+    function randomSeed() {
+        let x = Math.sin(seed++) * 10000;
+        return x - Math.floor(x);
+    }
+
+    function showScreen(screenId) {
+        document.getElementById('login-screen').classList.add('hidden');
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('level-screen').classList.add('hidden');
+        document.getElementById('gameover-screen').classList.add('hidden');
+        document.getElementById('victory-screen').classList.add('hidden');
+        document.getElementById('puzzle-html-layer').classList.add('hidden');
+        document.getElementById('game-ui').classList.remove('ui-visible');
+
+        if (screenId === 'login-screen') { gameState = STATES.LOGIN; renderRankingList(); }
+        if (screenId === 'start-screen') gameState = STATES.START;
+        if (screenId === 'level-screen') { gameState = STATES.MAP; buildLevelMenu(); }
+
+        document.getElementById(screenId).classList.remove('hidden');
+    }
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    function playRuneSound(index, type = 'triangle', duration = 0.5) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(runeFrequencies[index] || index, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.25, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function triggerShake(duration, intensity) {
+        shakeTimer = duration;
+        shakeIntensity = intensity;
+    }
+
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        if (gameState === STATES.START || gameState === STATES.GAMEOVER || gameState === STATES.MAP || gameState === STATES.LOGIN) {
+            boat.x = canvas.width / 2;
+            boat.y = canvas.height * 0.8;
+        }
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    window.addEventListener('keydown', e => keys[e.code] = true);
+    window.addEventListener('keyup', e => keys[e.code] = false);
+
+    window.addEventListener('touchstart', e => {
+        initAudio();
+        if (gameState !== STATES.PHASE1) return;
+        const touchX = e.touches[0].clientX;
+        if (touchX < window.innerWidth / 2) touchControls.left = true;
+        else touchControls.right = true;
+    }, {passive: true});
+
+    window.addEventListener('touchmove', e => {
+        if (gameState !== STATES.PHASE1) return;
+        const touchX = e.touches[0].clientX;
+        if (touchX < window.innerWidth / 2) {
+            touchControls.left = true;
+            touchControls.right = false;
+        } else {
+            touchControls.right = true;
+            touchControls.left = false;
+        }
+    }, {passive: true});
+
+    window.addEventListener('touchend', () => {
+        touchControls.left = false;
+        touchControls.right = false;
+    });
+
+    function getPuzzleTypeForLevel(lvl) {
+        let remainder = lvl % 3;
+        if (remainder === 1) return PUZZLE_TYPES.MEMORY;
+        if (remainder === 2) return PUZZLE_TYPES.REFLEX;
+        return PUZZLE_TYPES.LIGHTSOUT;
+    }
+
+    function startLevel(lvl) {
+        initAudio();
+        currentLevel = lvl;
+        
+        document.getElementById('start-screen').classList.add('hidden');
+        document.getElementById('level-screen').classList.add('hidden');
+        document.getElementById('gameover-screen').classList.add('hidden');
+        document.getElementById('victory-screen').classList.add('hidden');
+        document.getElementById('game-ui').classList.add('ui-visible');
+        
+        let t = ISLAND_THEMES[currentLevel];
+        document.getElementById('level-display').innerText = `SECTOR ${String(currentLevel).padStart(2, '0')}`;
+        
+        document.getElementById('trans-title').innerText = t.name.toUpperCase();
+        document.getElementById('transition-desc').innerText = `Alineando coordenadas óptimas... Prepárate para decodificar y restaurar el corazón místico de este sector.`;
+
+        resetLevel();
+        gameState = STATES.PHASE1;
+    }
+
+    function retryCurrentLevel() {
+        startLevel(currentLevel);
+    }
+
+    function advanceNext() {
+        if (currentLevel < MAX_TOTAL_LEVELS) {
+            startLevel(currentLevel + 1);
+        } else {
+            showScreen('level-screen');
+        }
+    }
+
+    function generateFloraItem(maxRadius) {
+        let t = ISLAND_THEMES[currentLevel];
+        let angle = Math.PI + Math.random() * Math.PI; 
+        let radius = Math.random() * maxRadius;
+        return {
+            relX: Math.cos(angle) * radius,
+            relY: Math.sin(angle) * radius, 
+            type: Math.random() > 0.35 ? 'flower' : 'tree',
+            color: t.flora[Math.floor(Math.random() * t.flora.length)],
+            size: Math.random() * 6 + 4,
+            currentScale: 0,
+            growSpeed: 1.2 + Math.random() * 1.5
+        };
+    }
+
+    function updateCrystalUI() {
+        document.getElementById('crystal-display').innerText = `CRISTALES: ${crystalsCollected} / ${totalCrystalsSpawned}`;
+    }
+
+    function resetLevel() {
+        seed = currentLevel * 1052 + 42;
+
+        worldY = 0;
+        islandHealedProgress = 0;
+        lighthouseLit = false;
+        bloomTriggered = false;
+        boat.x = canvas.width / 2;
+        boat.y = canvas.height * 0.78; 
+        boat.pulse = 0;
+        
+        crystalsCollected = 0;
+        totalCrystalsSpawned = 5; // Cantidad fija estricta de cristales requerida
+        currentPuzzleIndex = 1;
+
+        document.getElementById('puzzle-progress-display').classList.add('hidden');
+
+        for (let i = 0; i < 4; i++) {
+            document.getElementById('ind' + i).innerText = '';
+            document.getElementById('rune' + i).classList.remove('active');
+        }
+
+        obstacles = [];
+        items = [];
+        magicParticles = [];
+        boatTrailParticles = [];
+        islandFlora = [];
+        
+        let baseRadius = Math.min(canvas.width, canvas.height) * 0.4;
+        for (let i = 0; i < 60; i++) {
+            islandFlora.push(generateFloraItem(baseRadius - 15));
+        }
+
+        // GENERACIÓN REESTRUCTURADA: Trayecto dividido en exactamente 5 segmentos perfectamente distribuidos y fluidos
+        let totalSegments = 5;
+        let segmentHeight = (levelLength - 650) / totalSegments; 
+        let currentY = -300;
+
+        for (let i = 0; i < totalSegments; i++) {
+            currentY -= segmentHeight;
+
+            // Obstáculo del segmento con márgenes laterales que nunca obstruyen el paso completo
+            let size = randomSeed() * 10 + 44;
+            let padding = size + 140; 
+            let targetX = padding + randomSeed() * (canvas.width - padding * 2);
+
+            obstacles.push({
+                x: targetX,
+                y: currentY,
+                type: randomSeed() > 0.45 ? 'kraken' : 'whirlpool',
+                size: size,
+                pulse: randomSeed() * Math.PI * 2
+            });
+
+            // CRISTAL PERFECTO: Ubicado en el lado opuesto al obstáculo de forma holgada, a salvo de colisión
+            let crystalX = targetX > canvas.width / 2 ? targetX - 180 : targetX + 180;
+            if (crystalX < 80) crystalX = 100;
+            if (crystalX > canvas.width - 80) crystalX = canvas.width - 100;
+
+            items.push({
+                x: crystalX,
+                y: currentY + (segmentHeight / 2), // Espaciado vertical equidistante y libre de peligro
+                size: 13, 
+                pulse: randomSeed() * 5,
+                collected: false
+            });
+        }
+
+        updateCrystalUI();
+
+        backgroundWaves = [];
+        for(let i=0; i<50; i++) {
+            backgroundWaves.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, length: Math.random() * 80 + 40, speedF: Math.random() * 0.5 + 0.8 });
+        }
+    }
+
+    function initActivePuzzle() {
+        let type = getPuzzleTypeForLevel(currentLevel);
+        let containerTiles = document.getElementById('puzzle-tiles-container');
+        containerTiles.classList.add('disabled-clicks');
+        document.getElementById('puzzle-progress-display').classList.remove('hidden');
+
+        const glyphs = {
+            [PUZZLE_TYPES.MEMORY]: ['ᛗ', 'ᛖ', 'ᚦ', 'ᛟ'],
+            [PUZZLE_TYPES.REFLEX]: ['⚡', '✦', '✶', '✵'],
+            [PUZZLE_TYPES.LIGHTSOUT]: ['⎔', '✦', '⎔', '✦']
+        };
+
+        for (let i = 0; i < 4; i++) {
+            document.getElementById('rune' + i).classList.remove('active');
+            document.getElementById('ind' + i).innerText = '';
+            document.getElementById('g' + i).innerText = glyphs[type][i];
+            
+            let btn = document.getElementById('rune' + i);
+            if (type === PUZZLE_TYPES.REFLEX) btn.style.borderColor = "#ffb7b2";
+            else if (type === PUZZLE_TYPES.LIGHTSOUT) btn.style.borderColor = "#b5e2fa";
+            else btn.style.borderColor = "";
+        }
+
+        if (type === PUZZLE_TYPES.MEMORY) {
+            document.getElementById('puzzle-progress-display').innerText = `ARMONÍA: ${currentPuzzleIndex}/3`;
+            memorySequence = [];
+            playerSequence = [];
+            let sequenceLength = 2 + currentPuzzleIndex;
+            for (let i = 0; i < sequenceLength; i++) {
+                memorySequence.push(Math.floor(randomSeed() * 4)); 
+            }
+            runMemorySequenceShow();
+        } 
+        else if (type === PUZZLE_TYPES.REFLEX) {
+            document.getElementById('puzzle-progress-display').innerText = `REFLEJOS: ${reflexHits}/${reflexTargetHits}`;
+            reflexActiveRune = -1;
+            reflexTimer = 0;
+            isShowingSequence = false;
+            document.getElementById('puzzle-text-instructions').innerHTML = `<b>FARO DE REFLEJOS VELOCES</b><br>¡Pulsa inmediatamente la runa que destelle antes de que se extinga su luz!`;
+            setTimeout(() => {
+                containerTiles.classList.remove('disabled-clicks');
+                triggerNextReflexRune();
+            }, 1000);
+        } 
+        else if (type === PUZZLE_TYPES.LIGHTSOUT) {
+            document.getElementById('puzzle-progress-display').innerText = `MATRIZ INVERSA`;
+            isShowingSequence = false;
+            document.getElementById('puzzle-text-instructions').innerHTML = `<b>MATRIZ DE ALINEACIÓN SIMULTÁNEA</b><br>Pulsa las runas para invertir sus estados y los de sus adyacentes. ¡Enciende todas a la vez!`;
+            
+            loStates = [false, false, false, false];
+            let mixSteps = 3;
+            for(let m=0; m<mixSteps; m++) {
+                let r = Math.floor(randomSeed() * 4);
+                toggleLightsOutMecanic(r);
+            }
+            if(loStates.every(s => s === true)) {
+                toggleLightsOutMecanic(0);
+            }
+
+            updateLightsOutVisuals();
+            containerTiles.classList.remove('disabled-clicks');
+        }
+    }
+
+    function runMemorySequenceShow() {
+        isShowingSequence = true;
+        let containerTiles = document.getElementById('puzzle-tiles-container');
+        containerTiles.classList.add('disabled-clicks');
+        document.getElementById('puzzle-text-instructions').innerHTML = `<b>SINFONÍA DE MEMORIA ANCESTRAL</b><br>Escucha y observa la secuencia de resonancia elemental...`;
+
+        let delay = 600;
+        let i = 0;
+
+        function flashNext() {
+            if (gameState !== STATES.PHASE2) return;
+            if (i < memorySequence.length) {
+                let runeId = memorySequence[i];
+                let element = document.getElementById('rune' + runeId);
+                
+                setTimeout(() => {
+                    element.classList.add('active');
+                    playRuneSound(runeId);
+                    
+                    setTimeout(() => {
+                        element.classList.remove('active');
+                        i++;
+                        flashNext();
+                    }, delay - 180);
+
+                }, 100);
+            } else {
+                isShowingSequence = false;
+                containerTiles.classList.remove('disabled-clicks');
+                document.getElementById('puzzle-text-instructions').innerHTML = `<b>¡TU TURNO!</b><br>Repite las <b>${memorySequence.length}</b> frecuencias rúnicas en el mismo orden ordenado.`;
+            }
+        }
+        setTimeout(flashNext, 600);
+    }
+
+    function triggerNextReflexRune() {
+        if (gameState !== STATES.PHASE2 || lighthouseLit) return;
+        for (let i = 0; i < 4; i++) document.getElementById('rune' + i).classList.remove('active');
+
+        let prev = reflexActiveRune;
+        while(reflexActiveRune === prev) {
+            reflexActiveRune = Math.floor(Math.random() * 4);
+        }
+        
+        document.getElementById('rune' + reflexActiveRune).classList.add('active');
+        playRuneSound(reflexActiveRune, 'sine', 0.15);
+
+        reflexTimer = Math.max(0.55, 1.3 - (currentLevel * 0.04));
+    }
+
+    function toggleLightsOutMecanic(index) {
+        loStates[index] = !loStates[index];
+        let left = (index - 1 + 4) % 4;
+        let right = (index + 1) % 4;
+        loStates[left] = !loStates[left];
+        loStates[right] = !loStates[right];
+    }
+
+    function updateLightsOutVisuals() {
+        for(let i=0; i<4; i++) {
+            let el = document.getElementById('rune' + i);
+            let ind = document.getElementById('ind' + i);
+            if (loStates[i]) {
+                el.classList.add('active');
+                ind.innerText = 'ACTIVADA';
+                ind.style.color = '#fff';
+            } else {
+                el.classList.remove('active');
+                ind.innerText = 'INVERSA';
+                ind.style.color = '#7f8c8d';
+            }
+        }
+    }
+
+    function handleRuneClick(index, event) {
+        if(event) event.preventDefault();
+        if (lighthouseLit || gameState !== STATES.PHASE2) return;
+
+        let type = getPuzzleTypeForLevel(currentLevel);
+
+        if (type === PUZZLE_TYPES.MEMORY) {
+            if (isShowingSequence) return;
+            playerSequence.push(index);
+            let currentStep = playerSequence.length - 1;
+
+            if (playerSequence[currentStep] !== memorySequence[currentStep]) {
+                triggerShake(0.3, 10);
+                if (audioCtx) playRuneSound(110, 'sawtooth', 0.4); 
+                document.getElementById('puzzle-text-instructions').innerHTML = `<b style="color:#e66b6b;">DISONANCIA DETECTADA</b><br>Las frecuencias no coinciden. Reajustando modulación...`;
+                playerSequence = [];
+                runMemorySequenceShow();
+                return;
+            }
+
+            playRuneSound(index);
+
+            if (playerSequence.length === memorySequence.length) {
+                if (currentPuzzleIndex < totalPuzzlesNeeded) {
+                    currentPuzzleIndex++;
+                    initActivePuzzle();
+                } else {
+                    lighthouseLit = true;
+                    document.getElementById('puzzle-tiles-container').classList.add('disabled-clicks');
+                    if (audioCtx) playRuneSound(587.33, 'sine', 0.8); 
+                    triggerSuperBloomParticles();
+                }
+            }
+        }
+        else if (type === PUZZLE_TYPES.REFLEX) {
+            if (index === reflexActiveRune) {
+                reflexHits++;
+                playRuneSound(index, 'triangle', 0.2);
+                document.getElementById('puzzle-progress-display').innerText = `REFLEJOS: ${reflexHits}/${reflexTargetHits}`;
+                
+                if (reflexHits >= reflexTargetHits) {
+                    lighthouseLit = true;
+                    document.getElementById('puzzle-tiles-container').classList.add('disabled-clicks');
+                    for (let i = 0; i < 4; i++) document.getElementById('rune' + i).classList.remove('active');
+                    if (audioCtx) playRuneSound(587.33, 'sine', 0.8);
+                    triggerSuperBloomParticles();
+                } else {
+                    triggerNextReflexRune();
+                }
+            } else {
+                triggerShake(0.3, 10);
+                if (audioCtx) playRuneSound(110, 'sawtooth', 0.4);
+                reflexHits = Math.max(0, reflexHits - 1); 
+                document.getElementById('puzzle-progress-display').innerText = `REFLEJOS: ${reflexHits}/${reflexTargetHits}`;
+                triggerNextReflexRune();
+            }
+        }
+        else if (type === PUZZLE_TYPES.LIGHTSOUT) {
+            playRuneSound(index, 'sine', 0.2);
+            toggleLightsOutMecanic(index);
+            updateLightsOutVisuals();
+
+            if (loStates.every(s => s === true)) {
+                lighthouseLit = true;
+                document.getElementById('puzzle-tiles-container').classList.add('disabled-clicks');
+                if (audioCtx) playRuneSound(587.33, 'sine', 0.8);
+                for(let i=0; i<4; i++) document.getElementById('ind' + i).innerText = '';
+                triggerSuperBloomParticles();
+            }
+        }
+    }
+
+    function triggerSuperBloomParticles() {
+        magicParticles = [];
+        let crystalX = canvas.width / 2;
+        let baseRadius = Math.min(canvas.width, canvas.height) * 0.4;
+        let crystalY = canvas.height - baseRadius - 55; 
+
+        let t = ISLAND_THEMES[currentLevel];
+
+        for (let i = 0; i < 650; i++) { 
+            const angle = Math.random() * Math.PI * 2;
+            const speed = Math.random() * 550 + 100;
+            magicParticles.push({
+                x: crystalX, y: crystalY,
+                vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                radius: Math.random() * 6 + 2,
+                color: t.flora[Math.floor(Math.random() * t.flora.length)],
+                alpha: 1,
+                explosion: true,
+                friction: 0.98
+            });
+        }
+        triggerShake(0.8, 15);
+    }
+
+    function handleGameOver(causeMessage) {
+        gameState = STATES.GAMEOVER;
+        touchControls.left = false; 
+        touchControls.right = false;
+        document.getElementById('gameover-desc').innerText = causeMessage;
+        document.getElementById('gameover-screen').classList.remove('hidden');
+        document.getElementById('game-ui').classList.remove('ui-visible');
+    }
+
+    function showVictoryScreen() {
+        gameState = STATES.VICTORY;
+        document.getElementById('puzzle-html-layer').classList.add('hidden');
+        document.getElementById('puzzle-progress-display').classList.add('hidden');
+        
+        let t = ISLAND_THEMES[currentLevel];
+        document.getElementById('victory-title').innerText = `${t.name.toUpperCase()} PURIFICADO`;
+        document.getElementById('victory-desc').innerText = `La fauna, costas y templos del ecosistema han despertado exitosamente tras sincronizar los nexos armónicos rúnicos.`;
+
+        let star1Earned = true; 
+        let star2Earned = (crystalsCollected === totalCrystalsSpawned);
+        let star3Earned = true; 
+
+        let totalStarsCalculated = (star1Earned ? 1 : 0) + (star2Earned ? 1 : 0) + (star3Earned ? 1 : 0);
+
+        setupStarElement('star1', 'b-star1', star1Earned);
+        setupStarElement('star2', 'b-star2', star2Earned, star2Earned ? `⭐ CRISTALES PERFECTOS (${crystalsCollected}/${totalCrystalsSpawned})` : `❌ CRISTALES INCOMPLETOS (${crystalsCollected}/${totalCrystalsSpawned})`);
+        setupStarElement('star3', 'b-star3', star3Earned);
+
+        if (totalStarsCalculated === 3) {
+            document.getElementById('perfect-run-badge').classList.remove('hidden');
+        } else {
+            document.getElementById('perfect-run-badge').classList.add('hidden');
+        }
+
+        // SALVAGUARDA DE PERSISTENCIA INDEPENDIENTE POR PERFIL
+        if (globalRankings[currentPilot]) {
+            if (totalStarsCalculated > globalRankings[currentPilot][currentLevel].stars) {
+                globalRankings[currentPilot][currentLevel].stars = totalStarsCalculated;
+            }
+            if (currentLevel < MAX_TOTAL_LEVELS) {
+                globalRankings[currentPilot][currentLevel + 1].unlocked = true;
+            }
+            saveGlobalRankings();
+        }
+
+        if (currentLevel >= MAX_TOTAL_LEVELS) {
+            document.getElementById('victory-btn').innerText = "Fin del Nexo Astral";
+        } else {
+            document.getElementById('victory-btn').innerText = `Sincronizar Sector Siguiente`;
+        }
+
+        document.getElementById('victory-screen').classList.remove('hidden');
+    }
+
+    function setupStarElement(starId, breakdownId, earned, customText = null) {
+        let starEl = document.getElementById(starId);
+        let breakEl = document.getElementById(breakdownId);
+        
+        if (earned) {
+            starEl.classList.add('earned');
+            breakEl.innerHTML = `<span class="item-star hit">⭐</span> ` + (customText || breakEl.innerText.substring(2));
+        } else {
+            starEl.classList.remove('earned');
+            breakEl.innerHTML = `<span class="item-star missed">❌</span> ` + (customText || breakEl.innerText.substring(2));
+        }
+    }
+
+    let lastTime = performance.now();
+
+    function update() {
+        const now = performance.now();
+        let dt = Math.min((now - lastTime) / 1000, 0.1); 
+        lastTime = now;
+
+        if (shakeTimer > 0) {
+            shakeTimer -= dt;
+            let offsetX = (Math.random() - 0.5) * shakeIntensity;
+            let offsetY = (Math.random() - 0.5) * shakeIntensity;
+            container.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+            if (shakeTimer <= 0) container.style.transform = 'translate(0px, 0px)';
+        }
+
+        if (gameState === STATES.PHASE1) {
+            let progressRatio = Math.min(worldY / levelLength, 1);
+            let speed = (180 + (currentLevel * 20)) * (1 + progressRatio * 0.25); 
+            worldY += speed * dt;
+            boat.pulse += 4 * dt;
+
+            if (Math.random() > 0.4) {
+                boatTrailParticles.push({
+                    x: boat.x + (Math.random() - 0.5) * 15,
+                    y: boat.y + 20,
+                    vy: speed * 0.4,
+                    radius: Math.random() * 3 + 1,
+                    alpha: 0.6
+                });
+            }
+            boatTrailParticles.forEach(p => {
+                p.y += p.vy * dt;
+                p.alpha -= dt * 1.2;
+            });
+            boatTrailParticles = boatTrailParticles.filter(p => p.alpha > 0);
+
+            if (keys['ArrowLeft'] || keys['KeyA'] || touchControls.left) boat.x -= boat.speed * dt;
+            if (keys['ArrowRight'] || keys['KeyD'] || touchControls.right) boat.x += boat.speed * dt;
+
+            if (boat.x < 50) boat.x = 50;
+            if (boat.x > canvas.width - 50) boat.x = canvas.width - 50;
+
+            backgroundWaves.forEach(w => {
+                w.y += speed * w.speedF * dt;
+                if (w.y > canvas.height) { w.y = -100; w.x = Math.random() * canvas.width; }
+            });
+
+            items.forEach(item => {
+                if (!item.collected) {
+                    item.pulse += 5 * dt;
+                    let sItemY = item.y + worldY;
+                    let dist = Math.hypot(boat.x - item.x, boat.y - sItemY);
+                    
+                    if (dist < 48) {
+                        item.collected = true;
+                        crystalsCollected++;
+                        updateCrystalUI();
+                        if (audioCtx) playRuneSound(880, 'sine', 0.15);
+                    }
+                }
+            });
+
+            obstacles.forEach(obs => {
+                let screenObsY = obs.y + worldY;
+                obs.pulse += 3.0 * dt;
+
+                if (screenObsY > -200 && screenObsY < canvas.height + 200) {
+                    let dist = Math.hypot(boat.x - obs.x, boat.y - screenObsY);
+                    let collisionRadius = obs.type === 'kraken' ? (obs.size * 0.95) : (obs.size * 0.55);
+                    
+                    if (dist < (collisionRadius + boat.width / 2.2)) {
+                        triggerShake(0.6, 20);
+                        if (audioCtx) playRuneSound(100, 'sawtooth', 0.7); 
+                        handleGameOver(`Tu interceptor colisionó fatalmente en las inmediaciones del sector.`);
+                    }
+                }
+            });
+
+            let islandScreenY = -levelLength + worldY;
+            if (boat.y <= (islandScreenY + 220)) { 
+                gameState = STATES.TRANSITION;
+                touchControls.left = false; touchControls.right = false;
+                document.getElementById('game-ui').classList.remove('ui-visible');
+                document.getElementById('transition-screen').classList.remove('hidden');
+                magicParticles = [];
+
+                setTimeout(() => {
+                    document.getElementById('transition-screen').classList.add('hidden');
+                    document.getElementById('puzzle-html-layer').classList.remove('hidden');
+                    document.getElementById('game-ui').classList.add('ui-visible');
+                    
+                    gameState = STATES.PHASE2;
+                    initActivePuzzle();
+                }, 2600);
+            }
+        }
+        else if (gameState === STATES.PHASE2) {
+            boat.pulse += 1.2 * dt;
+
+            let type = getPuzzleTypeForLevel(currentLevel);
+            if (type === PUZZLE_TYPES.REFLEX && !lighthouseLit && reflexActiveRune !== -1) {
+                reflexTimer -= dt;
+                if (reflexTimer <= 0) {
+                    triggerShake(0.2, 6);
+                    if (audioCtx) playRuneSound(120, 'sawtooth', 0.2);
+                    reflexHits = Math.max(0, reflexHits - 1);
+                    document.getElementById('puzzle-progress-display').innerText = `REFLEJOS: ${reflexHits}/${reflexTargetHits}`;
+                    triggerNextReflexRune();
+                }
+            }
+
+            islandFlora.forEach(f => {
+                let targetScale = islandHealedProgress;
+                if (lighthouseLit && islandHealedProgress >= 1) targetScale = 1.5; 
+                if (f.currentScale < targetScale) {
+                    f.currentScale += f.growSpeed * dt;
+                    if (f.currentScale > targetScale) f.currentScale = targetScale;
+                }
+            });
+
+            if (lighthouseLit) {
+                if (islandHealedProgress < 1) {
+                    islandHealedProgress += 0.5 * dt; 
+                } else {
+                    if (!bloomTriggered) {
+                        bloomTriggered = true;
+                        let baseRadius = Math.min(canvas.width, canvas.height) * 0.4;
+                        for(let i=0; i < 250; i++){
+                            let newItem = generateFloraItem(baseRadius - 10);
+                            newItem.currentScale = 0.01;
+                            newItem.growSpeed = 2.5 + Math.random() * 2; 
+                            islandFlora.push(newItem);
+                        }
+                    }
+
+                    if (magicParticles.length === 0 || islandFlora.every(f => f.currentScale >= 1)) {
+                        setTimeout(showVictoryScreen, 800);
+                    }
+                }
+
+                magicParticles = magicParticles.filter(p => {
+                    if (p.explosion) {
+                        p.x += p.vx * dt; 
+                        p.y += p.vy * dt;
+                        p.vx *= p.friction;
+                        p.vy *= p.friction;
+                        p.alpha -= 0.55 * dt;
+                        return p.alpha > 0;
+                    }
+                    return true;
+                });
+            }
+        }
+    }
+
+    function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let theme = ISLAND_THEMES[currentLevel];
+
+        if (gameState === STATES.PHASE1 || gameState === STATES.TRANSITION) {
+            ctx.fillStyle = '#bce6ff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.lineWidth = 3;
+            backgroundWaves.forEach(w => {
+                ctx.strokeStyle = 'rgba(141, 198, 247, 0.6)';
+                ctx.beginPath(); ctx.moveTo(w.x, w.y); ctx.lineTo(w.x + w.length, w.y); ctx.stroke();
+            });
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            boatTrailParticles.forEach(p => {
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
+            });
+
+            items.forEach(item => {
+                if (!item.collected) {
+                    let sItemY = item.y + worldY;
+                    if (sItemY > -50 && sItemY < canvas.height + 50) {
+                        ctx.save();
+                        ctx.translate(item.x, sItemY);
+                        ctx.rotate(item.pulse * 0.2);
+                        
+                        let crystalGlow = ctx.createRadialGradient(0,0, 2, 0,0, item.size * 2.5);
+                        crystalGlow.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                        crystalGlow.addColorStop(1, 'transparent');
+                        ctx.fillStyle = crystalGlow;
+                        ctx.beginPath(); ctx.arc(0,0, item.size * 2.5, 0, Math.PI * 2); ctx.fill();
+
+                        ctx.fillStyle = '#ffc6ff';
+                        ctx.strokeStyle = '#fff';
+                        ctx.lineWidth = 2.5;
+                        ctx.beginPath();
+                        ctx.moveTo(0, -item.size * 1.4);
+                        ctx.lineTo(item.size, 0);
+                        ctx.lineTo(0, item.size * 1.4);
+                        ctx.lineTo(-item.size, 0);
+                        ctx.closePath();
+                        ctx.fill(); ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            });
+
+            let islandY = -levelLength + worldY;
+            let currentIslandColor = interpolateColor('#cfa882', theme.grass, islandHealedProgress);
+            let currentStrokeColor = interpolateColor('#a67c53', '#7cb88b', islandHealedProgress);
+
+            ctx.fillStyle = currentIslandColor;
+            ctx.strokeStyle = currentStrokeColor;
+            ctx.lineWidth = 5;
+            
+            ctx.beginPath();
+            ctx.moveTo(-50, islandY - 400); 
+            ctx.lineTo(-50, islandY + 200); 
+            ctx.bezierCurveTo(canvas.width * 0.25, islandY + 240, canvas.width * 0.5, islandY + 160, canvas.width * 0.75, islandY + 230);
+            ctx.lineTo(canvas.width + 50, islandY + 200); 
+            ctx.lineTo(canvas.width + 50, islandY - 400);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = interpolateColor('#dec0a2', theme.grass, islandHealedProgress);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2 - 300, islandY - 400);
+            ctx.lineTo(canvas.width / 2, islandY + 175);
+            ctx.lineTo(canvas.width / 2 + 350, islandY - 400);
+            ctx.closePath(); ctx.fill();
+
+            ctx.strokeStyle = 'rgba(74, 62, 77, 0.5)';
+            ctx.lineWidth = 6;
+            ctx.beginPath(); ctx.moveTo(canvas.width / 2 - 160, islandY + 185); ctx.lineTo(canvas.width / 2 + 160, islandY + 185); ctx.stroke();
+
+            obstacles.forEach(obs => {
+                let sY = obs.y + worldY;
+                if (sY > -200 && sY < canvas.height + 200) {
+                    if (obs.type === 'kraken') {
+                        ctx.save();
+                        ctx.translate(obs.x, sY);
+
+                        for (let i = 0; i < 8; i++) {
+                            let baseAngle = (Math.PI / 4) * i;
+                            let tentacleLength = obs.size * 1.4;
+                            let points = [];
+                            let segments = 5;
+                            for (let j = 1; j <= segments; j++) {
+                                let pct = j / segments;
+                                let currentLen = tentacleLength * pct;
+                                let wave = Math.sin(obs.pulse * 2.5 - (pct * 3.5) + i) * (obs.size * 0.4) * (1 - pct * 0.2);
+                                let posX = Math.cos(baseAngle) * currentLen + Math.cos(baseAngle + Math.PI/2) * wave;
+                                let posY = Math.sin(baseAngle) * currentLen + Math.sin(baseAngle + Math.PI/2) * wave;
+                                points.push({x: posX, y: posY});
+                            }
+
+                            ctx.strokeStyle = '#d6c5d8'; 
+                            ctx.lineWidth = 11 * (1 - (0.5/segments));
+                            ctx.beginPath(); ctx.moveTo(0,0); points.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+
+                            ctx.strokeStyle = i % 2 === 0 ? '#ffb7b2' : '#ffcad4';
+                            ctx.lineWidth = 7 * (1 - (0.5/segments));
+                            ctx.beginPath(); ctx.moveTo(0,0); points.forEach(p => ctx.lineTo(p.x, p.y)); ctx.stroke();
+                        }
+
+                        ctx.fillStyle = '#e8dbfc';
+                        ctx.beginPath(); ctx.arc(0, 0, obs.size * 0.45, 0, Math.PI * 2); ctx.fill();
+
+                        ctx.fillStyle = '#ffb7b2';
+                        ctx.beginPath();
+                        ctx.moveTo(-obs.size * 0.35, 0);
+                        ctx.bezierCurveTo(-obs.size * 0.5, -obs.size * 0.3, -obs.size * 0.4, -obs.size * 0.75, 0, -obs.size * 0.8);
+                        ctx.bezierCurveTo(obs.size * 0.4, -obs.size * 0.75, obs.size * 0.5, -obs.size * 0.3, obs.size * 0.3, 0);
+                        ctx.closePath(); ctx.fill();
+
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(-10, -8, 6, 3); ctx.fillRect(4, -8, 6, 3);
+                        ctx.fillStyle = '#6c5ce7';
+                        ctx.fillRect(-8, -8, 2, 3); ctx.fillRect(6, -8, 2, 3);
+                        ctx.restore();
+                    } else {
+                        ctx.save();
+                        ctx.translate(obs.x, sY);
+                        ctx.rotate(obs.pulse * 1.5);
+                        ctx.strokeStyle = '#ffdac1';
+                        ctx.lineWidth = 6;
+                        ctx.beginPath();
+                        for (let theta = 0; theta < Math.PI * 5; theta += 0.15) {
+                            let r = (obs.size * 0.05) * theta;
+                            if (theta === 0) ctx.moveTo(r * Math.cos(theta), r * Math.sin(theta)); 
+                            else ctx.lineTo(r * Math.cos(theta), r * Math.sin(theta));
+                        }
+                        ctx.stroke();
+                        ctx.fillStyle = '#ffffff';
+                        ctx.beginPath(); ctx.arc(0, 0, obs.size * 0.1, 0, Math.PI * 2); ctx.fill();
+                        ctx.restore();
+                    }
+                }
+            });
+
+            ctx.save();
+            ctx.translate(boat.x, boat.y);
+            
+            let thrusterGlow = ctx.createRadialGradient(0, 25, 2, 0, 35, 25);
+            thrusterGlow.addColorStop(0, '#b5e2fa');
+            thrusterGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = thrusterGlow;
+            ctx.fillRect(-20, 15, 40, 30);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#ffcad4';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(0, -32); ctx.lineTo(-18, 5); ctx.lineTo(-12, 24); ctx.lineTo(12, 24); ctx.lineTo(18, 5);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = '#ffb7b2';
+            ctx.beginPath();
+            ctx.moveTo(0, -20); ctx.lineTo(-12, 4); ctx.lineTo(0, 18); ctx.lineTo(12, 4);
+            ctx.closePath(); ctx.fill();
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(181, 226, 250, 0.85)';
+            let wingSwivel = Math.sin(boat.pulse) * 4;
+            ctx.beginPath();
+            ctx.moveTo(0, -28);
+            ctx.bezierCurveTo(24 + wingSwivel, -14, 20 + wingSwivel, 8, 0, 12);
+            ctx.bezierCurveTo(3, -4, 3, -15, 0, -28);
+            ctx.fill();
+            ctx.restore();
+            ctx.restore();
+        }
+        else if (gameState === STATES.PHASE2 || gameState === STATES.VICTORY) {
+            let skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGrad.addColorStop(0, theme.sky[0]); 
+            skyGrad.addColorStop(1, theme.sky[1]);
+            ctx.fillStyle = skyGrad; ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            let islandX = canvas.width / 2;
+            let islandY = canvas.height; 
+            let baseRadius = Math.min(canvas.width, canvas.height) * 0.4; 
+
+            ctx.fillStyle = interpolateColor('#d1bda7', theme.grass, islandHealedProgress);
+            ctx.beginPath();
+            ctx.moveTo(-100, canvas.height); ctx.lineTo(canvas.width * 0.15, canvas.height * 0.5); ctx.lineTo(canvas.width * 0.4, canvas.height);
+            ctx.moveTo(canvas.width * 0.6, canvas.height); ctx.lineTo(canvas.width * 0.85, canvas.height * 0.45); ctx.lineTo(canvas.width + 100, canvas.height);
+            ctx.fill();
+
+            ctx.fillStyle = interpolateColor('#ba936c', theme.grass, islandHealedProgress);
+            ctx.strokeStyle = interpolateColor('#a67c53', '#7cb88b', islandHealedProgress);
+            ctx.lineWidth = 5;
+            ctx.beginPath(); ctx.arc(islandX, islandY, baseRadius, Math.PI, 0, false); ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            ctx.save();
+            islandFlora.forEach(item => {
+                if (item.currentScale > 0.01) {
+                    let fX = islandX + item.relX;
+                    let fY = islandY + item.relY;
+
+                    if (Math.hypot(fX - islandX, fY - (islandY - baseRadius)) > 45) {
+                        ctx.save();
+                        ctx.translate(fX, fY);
+                        ctx.scale(item.currentScale, item.currentScale); 
+
+                        if (item.type === 'tree') {
+                            ctx.fillStyle = '#8B5A2B'; ctx.fillRect(-1.5, -9, 3, 9);
+                            ctx.fillStyle = interpolateColor('#9cdb9e', item.color, islandHealedProgress); 
+                            ctx.beginPath(); ctx.arc(0, -11, item.size * 1.3, 0, Math.PI * 2); ctx.fill();
+                        } else {
+                            ctx.fillStyle = '#73c984'; ctx.fillRect(-1, -3, 2, 4);
+                            ctx.fillStyle = item.color; ctx.beginPath(); ctx.arc(0, -4, item.size * 0.65, 0, Math.PI * 2); ctx.fill();
+                        }
+                        ctx.restore();
+                    }
+                }
+            });
+            ctx.restore();
+
+            let lighthouseBaseX = islandX;
+            let lighthouseBaseY = islandY - baseRadius; 
+
+            ctx.save();
+            ctx.translate(lighthouseBaseX, lighthouseBaseY);
+            ctx.fillStyle = interpolateColor('#d1c2b4', '#d2cfe3', islandHealedProgress);
+            ctx.strokeStyle = '#bfae9e'; ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(-20, -55); ctx.lineTo(20, -55); ctx.lineTo(35, 5); ctx.lineTo(-35, 5); ctx.closePath(); ctx.fill(); ctx.stroke();
+
+            ctx.strokeStyle = lighthouseLit ? '#ffffcc' : 'rgba(0,0,0,0.15)';
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.moveTo(0, -45); ctx.lineTo(0, -5); ctx.moveTo(-12, -30); ctx.lineTo(12, -25); ctx.moveTo(-15, -15); ctx.lineTo(15, -10); ctx.stroke();
+            ctx.restore();
+
+            let crystalY = lighthouseBaseY - 55;
+            ctx.save();
+            if (lighthouseLit) {
+                ctx.globalCompositeOperation = 'screen';
+                let beamRadius = Math.sin(Date.now() * 0.008) * 35 + 290;
+                
+                let beamGrad = ctx.createLinearGradient(islandX - 60, 0, islandX + 60, 0);
+                beamGrad.addColorStop(0, 'rgba(255, 255, 255, 0)'); 
+                beamGrad.addColorStop(0.5, 'rgba(255, 254, 230, 0.5)'); 
+                beamGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = beamGrad; ctx.fillRect(islandX - 70, 0, 140, crystalY);
+
+                let radialGlow = ctx.createRadialGradient(islandX, crystalY, 4, islandX, crystalY, beamRadius);
+                radialGlow.addColorStop(0, '#ffffff'); 
+                radialGlow.addColorStop(0.3, theme.flora[0]); 
+                radialGlow.addColorStop(0.6, theme.flora[1]); 
+                radialGlow.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = radialGlow; ctx.beginPath(); ctx.arc(islandX, crystalY, beamRadius, 0, Math.PI * 2); ctx.fill();
+            } else {
+                ctx.fillStyle = '#a69788'; ctx.beginPath(); ctx.arc(islandX, crystalY, 13, 0, Math.PI * 2); ctx.fill();
+            }
+            ctx.restore();
+
+            magicParticles.forEach(p => {
+                ctx.save(); ctx.globalAlpha = p.alpha; ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            });
+        }
+    }
+
+    function interpolateColor(color1, color2, factor) {
+        if (factor === 0) return color1; if (factor === 1) return color2;
+        let c1 = parseInt(color1.slice(1), 16), c2 = parseInt(color2.slice(1), 16);
+        let r = Math.round(((c1 >> 16) & 255) + factor * (((c2 >> 16) & 255) - ((c1 >> 16) & 255)));
+        let g = Math.round(((c1 >> 8) & 255) + factor * (((c2 >> 8) & 255) - ((c1 >> 8) & 255)));
+        let b = Math.round((c1 & 255) + factor * ((c2 & 255) - (c1 & 255)));
+        return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    }
+
+    function gameLoop() {
+        update();
+        render();
+        requestAnimationFrame(gameLoop);
+    }
+    gameLoop();
+</script>
+
+</body>
+</html>
